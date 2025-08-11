@@ -1,0 +1,9 @@
+env: "local"
+mainStorage_path: "./storage/main/mainAuthStorage.db"
+sessionsStorage_path: "./storage/sessions/sessionsAuthStorage.db"
+secret: "mysecret" # так делать, конечно, не бизнес, но пусть пока так
+access_token_ttl: 1h
+refresh_token_ttl: 24h
+grpc:
+  port: 44044
+  timeout: 10h

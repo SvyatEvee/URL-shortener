@@ -1,0 +1,9 @@
+version: "3"
+
+tasks:
+  migrate:
+    aliases:
+      - mig
+    desc: "migrates database"
+    cmds:
+      - migrate -path ./migrations -database "sqlite3://storage/storage.db" up

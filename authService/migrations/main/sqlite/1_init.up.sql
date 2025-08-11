@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS roles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(20) UNIQUE NOT NULL
+);
+
+INSERT INTO roles (id, name)
+VALUES (1,'user'), (2,'admin');
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash BLOB NOT NULL,
+    role_id INTEGER REFERENCES roles(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_email ON users(email);
+
+
+

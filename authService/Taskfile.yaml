@@ -1,0 +1,10 @@
+version: "3"
+
+tasks:
+  migrate:
+    aliases:
+      - mig
+    desc: "migrates database"
+    cmds:
+      - migrate -path ./migrations/main/sqlite -database "sqlite3://storage/main/mainAuthStorage.db" up
+      - migrate -path ./migrations/sessions/sqlite -database "sqlite3://storage/sessions/sessionsAuthStorage.db" up
