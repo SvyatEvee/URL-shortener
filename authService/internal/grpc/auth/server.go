@@ -74,24 +74,6 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*
 	}, nil
 }
 
-/*func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ssov1.IsAdminResponse, error) {
-	if err := validateIsAdmin(req); err != nil {
-		return nil, err
-	}
-
-	isAdmin, err := s.auth.IsAdmin(ctx, req.GetUserId())
-	if err != nil {
-		if errors.Is(err, auth.ErrUserNotFound) {
-			return nil, status.Error(codes.AlreadyExists, "user not found")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
-	}
-
-	return &ssov1.IsAdminResponse{
-		IsAdmin: isAdmin,
-	}, nil
-}*/
-
 func validateLogin(req *ssov1.LoginRequest) error {
 
 	type loginRequestValidate struct {
@@ -105,7 +87,8 @@ func validateLogin(req *ssov1.LoginRequest) error {
 	}
 
 	if err := validator.New().Struct(toValidate); err != nil {
-		if validateErr, ok := err.(validator.ValidationErrors); ok {
+		var validateErr validator.ValidationErrors
+		if errors.As(err, &validateErr) {
 			return status.Error(codes.InvalidArgument, api.ValidationError(validateErr))
 		}
 		return status.Error(codes.InvalidArgument, "login request validation is failed")
@@ -126,7 +109,8 @@ func validateRegister(req *ssov1.RegisterRequest) error {
 	}
 
 	if err := validator.New().Struct(toValidate); err != nil {
-		if validateErr, ok := err.(validator.ValidationErrors); ok {
+		var validateErr validator.ValidationErrors
+		if errors.As(err, &validateErr) {
 			return status.Error(codes.InvalidArgument, api.ValidationError(validateErr))
 		}
 		return status.Error(codes.InvalidArgument, "register request validation is failed")

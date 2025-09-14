@@ -7,6 +7,7 @@ import (
 	"net"
 	"sso/internal/config"
 	authgrpc "sso/internal/grpc/auth"
+	"sso/internal/grpc/interceptors/authorization"
 	jwtlib "sso/internal/lib/jwt"
 	"sso/internal/services/auth"
 	"sso/internal/storage/sqlite"
@@ -18,25 +19,22 @@ type App struct {
 	port       int
 }
 
-func New(log *slog.Logger,
-	cfg *config.Config,
-	// mainStoragePath string,
-	// sessionsStoragePath string,
-	// tokenTTL time.Duration,
-	// grpcPort int,
-) *App {
+func New(log *slog.Logger, cfg *config.Config) *App {
 
 	mainStorage, err := sqlite.New(cfg.MainStoragePath)
 	if err != nil {
 		panic(err)
 	}
 
-	tokenProvider := jwtlib.New(cfg.AccessTokenTTL, cfg.Secret)
+	tokenManager := jwtlib.New(cfg.AccessTokenTTL, cfg.Secret)
 
 	// FIXME: Нужно реализовать логику для внедрения sessionsStorage
-	authService := auth.New(log, mainStorage, mainStorage, tokenProvider)
+	authService := auth.New(log, mainStorage, mainStorage, tokenManager)
 
-	gRPCServer := grpc.NewServer()
+	gRPCServer := grpc.NewServer(
+		grpc.UnaryInterceptor(authorization.NewJWTInterceptor(log, tokenManager)),
+	)
+
 	authgrpc.Register(gRPCServer, authService)
 
 	return &App{

@@ -11,7 +11,7 @@ import (
 type Config struct {
 	Env                 string        `yaml:"env" env-default:"local"`
 	MainStoragePath     string        `yaml:"mainStorage_path" env-required:"true"`
-	SessionsStoragePath string        `yaml:"sessions_storage_path" env-required:"true"`
+	SessionsStoragePath string        `yaml:"sessionsStorage_path" env-required:"true"`
 	Secret              string        `yaml:"secret"`
 	AccessTokenTTL      time.Duration `yaml:"access_token_ttl" env-required:"true"`
 	RefreshTokenTTL     time.Duration `yaml:"refresh_token_ttl" env-required:"true"`

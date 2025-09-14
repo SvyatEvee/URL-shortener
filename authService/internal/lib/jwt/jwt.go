@@ -1,8 +1,11 @@
 package jwtlib
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"sso/internal/domain/models"
 	"time"
@@ -20,14 +23,34 @@ func New(tokenTTL time.Duration, secret string) *TokenManager {
 	}
 }
 
-func (t *TokenManager) NewTokenPair(user models.User) (string, string, error) {
+func (t *TokenManager) ValidateTokenAndGetClaims(tokenString string) (jwt.MapClaims, error) {
 
-	accessTokenString, err := t.createAccessToken(user)
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(t.secret), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("token validation error: %w", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("failed ot get claims from token")
+	}
+
+	return claims, nil
+}
+
+func (t *TokenManager) GenerateNewTokenPair(user models.User) (string, string, error) {
+
+	accessTokenString, err := t.generateAccessToken(user)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := t.createAccessToken(user)
+	refreshToken, err := t.generateRefreshToken()
 	if err != nil {
 		return "", "", err
 	}
@@ -35,7 +58,7 @@ func (t *TokenManager) NewTokenPair(user models.User) (string, string, error) {
 	return accessTokenString, refreshToken, nil
 }
 
-func (t *TokenManager) createAccessToken(user models.User) (string, error) {
+func (t *TokenManager) generateAccessToken(user models.User) (string, error) {
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 
 	claims := accessToken.Claims.(jwt.MapClaims)
@@ -63,19 +86,10 @@ func (t *TokenManager) generateRefreshToken() (string, error) {
 	return refreshToken, nil
 }
 
-// TODO: покрыть тестами
-//func NewToken(user models.User, app models.App, duration time.Duration) (string, error) {
-//	token := jwt.New(jwt.SigningMethodHS256)
-//
-//	claims := token.Claims.(jwt.MapClaims)
-//	claims["uid"] = user.ID
-//	claims["email"] = user.Email
-//	claims["exp"] = time.Now().Add(duration).Unix()
-//
-//	tokenString, err := token.SignedString([]byte(app.Secret))
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	return tokenString, nil
-//}
+func GetClaimsFromContext(ctx context.Context) (jwt.MapClaims, error) {
+	claims, ok := ctx.Value("claims").(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("failed ot get claims from context")
+	}
+	return claims, nil
+}

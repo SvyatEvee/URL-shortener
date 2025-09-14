@@ -9,6 +9,7 @@ import (
 	"sso/internal/domain/models"
 	"sso/internal/lib/logger/sl"
 	"sso/internal/storage"
+	"time"
 )
 
 type Auth struct {
@@ -26,12 +27,8 @@ type UserProvider interface {
 	GetUser(ctx context.Context, email string) (models.User, error)
 }
 
-//type AppProvider interface {
-//	App(ctx context.Context, appID int) (models.App, error)
-//}
-
 type TokenManager interface {
-	NewTokenPair(user models.User) (string, string, error)
+	GenerateNewTokenPair(user models.User) (string, string, error)
 }
 
 var (
@@ -88,7 +85,7 @@ func (a *Auth) Login(ctx context.Context, email string, password string) (string
 
 	log.Info("user logged in successfully")
 
-	accessToken, refreshToken, err := a.tokenManager.NewTokenPair(user)
+	accessToken, refreshToken, err := a.tokenManager.GenerateNewTokenPair(user)
 	if err != nil {
 		log.Error("failed to generate token", sl.Err(err))
 
@@ -98,16 +95,17 @@ func (a *Auth) Login(ctx context.Context, email string, password string) (string
 	return accessToken, refreshToken, nil
 }
 
-func (a *Auth) RegisterNewUser(ctx context.Context,
-	email string,
-	password string,
-) (int64, error) {
-
+func (a *Auth) RegisterNewUser(ctx context.Context, email string, password string) (int64, error) {
 	const op = "auth.RegisterNewUser"
 
 	log := a.log.With(
 		slog.String("op", op),
 		slog.String("email", email))
+
+	start := time.Now()
+	defer func() {
+		log.Debug("request processed", slog.String("duration", time.Since(start).String()))
+	}()
 
 	log.Info("registering user")
 
