@@ -12,15 +12,25 @@ import (
 )
 
 type TokenManager struct {
-	tokenTTL time.Duration
-	secret   string
+	accessTokenTTL  time.Duration
+	refreshTokenTTL time.Duration
+	secret          string
 }
 
-func New(tokenTTL time.Duration, secret string) *TokenManager {
+func New(accessTokenTTL time.Duration, refreshTokenTTL time.Duration, secret string) *TokenManager {
 	return &TokenManager{
-		tokenTTL: tokenTTL,
-		secret:   secret,
+		accessTokenTTL:  accessTokenTTL,
+		refreshTokenTTL: refreshTokenTTL,
+		secret:          secret,
 	}
+}
+
+func (t *TokenManager) GetAccessTokenTTL() time.Duration {
+	return t.accessTokenTTL
+}
+
+func (t *TokenManager) GetRefreshTokenTTL() time.Duration {
+	return t.refreshTokenTTL
 }
 
 func (t *TokenManager) ValidateTokenAndGetClaims(tokenString string) (jwt.MapClaims, error) {
@@ -37,34 +47,49 @@ func (t *TokenManager) ValidateTokenAndGetClaims(tokenString string) (jwt.MapCla
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, errors.New("failed ot get claims from token")
+		return nil, errors.New("failed to get claims from token")
+	}
+
+	//FIXME: проверить время жизни токена!!!!
+
+	expiresAtAny, ok := claims["exp"]
+	if !ok {
+		return nil, errors.New("invalid fields of claims")
+	}
+
+	expiresAt, ok := expiresAtAny.(float64)
+	if !ok {
+		return nil, errors.New("invalid fields of claims")
+	}
+	if time.Now().Unix() > int64(expiresAt) {
+		return nil, errors.New("token expired")
 	}
 
 	return claims, nil
 }
 
-func (t *TokenManager) GenerateNewTokenPair(user models.User) (string, string, error) {
+func (t *TokenManager) GenerateNewTokenPair(user *models.User) (string, string, error) {
 
 	accessTokenString, err := t.generateAccessToken(user)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := t.generateRefreshToken()
+	refreshTokenRandomPart, err := t.generateRefreshTokenRandomPart()
 	if err != nil {
 		return "", "", err
 	}
 
-	return accessTokenString, refreshToken, nil
+	return accessTokenString, refreshTokenRandomPart, nil
 }
 
-func (t *TokenManager) generateAccessToken(user models.User) (string, error) {
+func (t *TokenManager) generateAccessToken(user *models.User) (string, error) {
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 
 	claims := accessToken.Claims.(jwt.MapClaims)
 	claims["uid"] = user.ID
 	claims["email"] = user.Email
-	claims["exp"] = time.Now().Add(t.tokenTTL).Unix()
+	claims["exp"] = time.Now().Add(t.accessTokenTTL).Unix()
 	claims["role"] = user.Role
 
 	tokenString, err := accessToken.SignedString([]byte(t.secret))
@@ -75,7 +100,7 @@ func (t *TokenManager) generateAccessToken(user models.User) (string, error) {
 	return tokenString, nil
 }
 
-func (t *TokenManager) generateRefreshToken() (string, error) {
+func (t *TokenManager) generateRefreshTokenRandomPart() (string, error) {
 	tokenBytes := make([]byte, 32)
 
 	if _, err := rand.Read(tokenBytes); err != nil {
