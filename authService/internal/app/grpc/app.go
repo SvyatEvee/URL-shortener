@@ -26,10 +26,15 @@ func New(log *slog.Logger, cfg *config.Config) *App {
 		panic(err)
 	}
 
-	tokenManager := jwtlib.New(cfg.AccessTokenTTL, cfg.Secret)
+	sessionStorage, err := sqlite.New(cfg.SessionsStoragePath)
+	if err != nil {
+		panic(err)
+	}
+
+	tokenManager := jwtlib.New(cfg.AccessTokenTTL, cfg.RefreshTokenTTL, cfg.Secret)
 
 	// FIXME: Нужно реализовать логику для внедрения sessionsStorage
-	authService := auth.New(log, mainStorage, mainStorage, tokenManager)
+	authService := auth.New(log, mainStorage, tokenManager, sessionStorage)
 
 	gRPCServer := grpc.NewServer(
 		grpc.UnaryInterceptor(authorization.NewJWTInterceptor(log, tokenManager)),

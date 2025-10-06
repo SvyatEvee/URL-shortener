@@ -19,8 +19,9 @@ type TokenValidator interface {
 
 func isPublicMethod(methodName string) bool {
 	publicMethod := map[string]bool{
-		"/auth.Auth/Register": true,
-		"/auth.Auth/Login":    true,
+		"/auth.Auth/Register":           true,
+		"/auth.Auth/Login":              true,
+		"/auth.Auth/GetNewRefreshToken": true,
 	}
 	return publicMethod[methodName]
 }
