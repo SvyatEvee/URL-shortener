@@ -47,7 +47,6 @@ func New(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 		}
 
 		log.Info("request body decoded", slog.Any("request", req))
-
 		if err := validator.New().Struct(req); err != nil {
 			validateErr := err.(validator.ValidationErrors)
 
