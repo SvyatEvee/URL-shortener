@@ -26,7 +26,6 @@ func main() {
 	log.Info("starting application",
 		slog.Any("cfg", cfg))
 
-	// FIXME: Storage нужно указать разыне для sessions и для main
 	application := grpcapp.New(log, cfg)
 
 	go application.MustRun()

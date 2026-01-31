@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "authService/gen/go/sso";
+
+import "google/api/annotations.proto";
+
+service Auth {
+  rpc Register (RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/auth"
+      body: "*"
+    };
+  }
+  rpc Login (LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/auth/login"
+      body: "*"
+    };
+  }
+  rpc Logout (LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/auth/logout"
+      body: "*"
+    };
+  }
+  rpc GetNewRefreshToken (GetNewRefreshTokenRequest) returns (GetNewRefreshTokenResponse) {
+    option (google.api.http) = {
+      patch: "/auth/updateToken"
+      body: "*"
+    };
+  }
+  rpc DeleteUserByID (DeleteUserByIDRequest) returns (DeleteUserByIDResponse) {
+    option (google.api.http) = {
+      post: "/auth/deleteID"
+      body: "*"
+    };
+  }
+  rpc DeleteUserByEmail (DeleteUserByEmailRequest) returns (DeleteUserByEmailResponse) {
+    option (google.api.http) = {
+      post: "/auth/deleteEmail"
+      body: "*"
+    };
+  }
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+}
+message RegisterResponse {
+  int64 user_id = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+message LogoutResponse {
+  bool success = 1;
+}
+
+message GetNewRefreshTokenRequest {
+  string refresh_token = 1;
+}
+message GetNewRefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message DeleteUserByIDRequest {
+  int64 user_id = 1;
+}
+message DeleteUserByIDResponse {
+  bool success = 1;
+}
+
+message DeleteUserByEmailRequest {
+  string email = 1;
+}
+message DeleteUserByEmailResponse {
+  bool success = 1;
+}

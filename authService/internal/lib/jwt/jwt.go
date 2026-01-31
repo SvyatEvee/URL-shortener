@@ -50,8 +50,6 @@ func (t *TokenManager) ValidateTokenAndGetClaims(tokenString string) (jwt.MapCla
 		return nil, errors.New("failed to get claims from token")
 	}
 
-	//FIXME: проверить время жизни токена!!!!
-
 	expiresAtAny, ok := claims["exp"]
 	if !ok {
 		return nil, errors.New("invalid fields of claims")
@@ -109,6 +107,28 @@ func (t *TokenManager) generateRefreshTokenRandomPart() (string, error) {
 
 	refreshToken := base64.URLEncoding.EncodeToString(tokenBytes)
 	return refreshToken, nil
+}
+
+func (t *TokenManager) CreateServiceToken(ctx context.Context, userID int64) (string, error) {
+	claims, err := GetClaimsFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if _, ok := claims["role"]; !ok {
+		return "", errors.New("failed to get field role from claims")
+	}
+
+	claims["role"] = "service"
+	claims["uid"] = userID
+
+	serviceToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := serviceToken.SignedString([]byte(t.secret))
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }
 
 func GetClaimsFromContext(ctx context.Context) (jwt.MapClaims, error) {

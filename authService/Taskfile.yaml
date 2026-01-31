@@ -1,10 +1,44 @@
 version: "3"
 
+vars:
+  MAIN_DB_URL:    "postgres://{{.DB_USERS_USERNAME}}:{{.DB_USERS_PASSWORD}}@{{.DB_USERS_HOST}}:{{.DB_USERS_PORT}}/{{.DB_USERS_NAME}}?sslmode=disable"
+  SESSION_DB_URL: "postgres://{{.DB_SESSIONS_USERNAME}}:{{.DB_SESSIONS_PASSWORD}}@{{.DB_SESSIONS_HOST}}:{{.DB_SESSIONS_PORT}}/{{.DB_SESSIONS_NAME}}?sslmode=disable"
+  MAIN_MIGRATIONS_PATH:     "./migrations/main/postgres"
+  SESSIONS_MIGRATIONS_PATH: "./migrations/sessions/postgres"
+#  MAIN_DB_URL:    "sqlite3://./storage/main/mainstorage.db"
+#  SESSION_DB_URL: "sqlite3://./storage/sessions/sessionstorage.db"
+#  MAIN_MIGRATIONS_PATH:     "./migrations/main/sqlite"
+#  SESSIONS_MIGRATIONS_PATH: "./migrations/sessions/sqlite"
+
 tasks:
-  migrate:
+  migrate-sql:
     aliases:
-      - mig
-    desc: "migrates database"
+      - mig-sql
+    desc: "migrates sql database"
     cmds:
-      - migrate -path ./migrations/main/sqlite -database "sqlite3://storage/main/mainAuthStorage.db" up
-      - migrate -path ./migrations/sessions/sqlite -database "sqlite3://storage/sessions/sessionsAuthStorage.db" up
+      - migrate -path {{.MAIN_MIGRATIONS_PATH}}     -database "{{.MAIN_DB_URL}}"     up
+      - migrate -path {{.SESSIONS_MIGRATIONS_PATH}} -database "{{.SESSION_DB_URL}}"  up
+
+  migrate-sql-down:
+    aliases:
+      - mig-sql-down
+    desc: "rollback sql database"
+    cmds:
+      - migrate -path {{.MAIN_MIGRATIONS_PATH}}     -database "{{.MAIN_DB_URL}}"     down
+      - migrate -path {{.SESSIONS_MIGRATIONS_PATH}} -database "{{.SESSION_DB_URL}}"  down
+
+  generate:
+    aliases:
+      - gen
+    desc: "generate code from proto files"
+    cmds:
+      - protoc -I proto --go_out=./gen/go --go_opt=paths=source_relative --go-grpc_out=./gen/go --go-grpc_opt=paths=source_relative --grpc-gateway_out=./gen/go --grpc-gateway_opt=paths=source_relative proto/sso/sso.proto
+
+  download_files:
+    aliases:
+      - dwnld_files
+    desc: "generate code from proto files"
+    cmds:
+      - curl -o proto/google/api/annotations.proto https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/annotations.proto
+      - curl -o proto/google/api/http.proto https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/http.proto
+      - curl -o proto/google/api/field_behavior.proto https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/field_behavior.proto

@@ -1,8 +1,10 @@
 env: "local" #local, dev, prod
-storage_path: "./storage/storage.db"
+db_driver : "postgres"
+#conn_string: "postgres://user:1234@localhost:5433/url?sslmode=disable"
+#secret: "mysecret" # так делать, конечно, не бизнес, но пусть пока так
 http_server:
-  address: "localhost:8082"
-  timeout: 4s
-  idle_timeout: 60s
+  address: ":8082"
+  timeout: 1000s
+  idle_timeout: 10000s
   user: "myuser"
   password: "mypass"

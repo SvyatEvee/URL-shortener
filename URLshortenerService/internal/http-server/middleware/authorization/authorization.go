@@ -10,10 +10,8 @@ import (
 	"strings"
 )
 
-type contextKey string
-
 const (
-	claimsKey contextKey = "claims"
+	claimsKey string = "claims"
 )
 
 type TokenValidator interface {

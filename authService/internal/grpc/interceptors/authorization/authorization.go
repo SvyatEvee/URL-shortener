@@ -22,6 +22,7 @@ func isPublicMethod(methodName string) bool {
 		"/auth.Auth/Register":           true,
 		"/auth.Auth/Login":              true,
 		"/auth.Auth/GetNewRefreshToken": true,
+		"/auth.Auth/Logout":             true,
 	}
 	return publicMethod[methodName]
 }

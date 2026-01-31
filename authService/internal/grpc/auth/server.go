@@ -4,16 +4,12 @@ import (
 	"context"
 	"errors"
 	"github.com/go-playground/validator/v10"
-	ssov1 "github.com/svyatevee/protos/gen/go/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	ssov1 "sso/gen/go/sso"
 	"sso/internal/lib/api"
 	"sso/internal/services/auth"
-)
-
-const (
-	emptyValue = 0
 )
 
 type Auth interface {
@@ -44,7 +40,7 @@ func (s *serverAPI) DeleteUserByID(ctx context.Context, req *ssov1.DeleteUserByI
 	if err := s.auth.DeleteUserByID(ctx, req.GetUserId()); err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidCredentials):
-			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+			return nil, status.Error(codes.PermissionDenied, "invalid credentials")
 		case errors.Is(err, auth.ErrUserNotFound):
 			return nil, status.Error(codes.InvalidArgument, "user non-exists")
 		default:
@@ -64,7 +60,7 @@ func (s *serverAPI) DeleteUserByEmail(ctx context.Context, req *ssov1.DeleteUser
 	if err := s.auth.DeleteUserByEmail(ctx, req.GetEmail()); err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidCredentials):
-			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+			return nil, status.Error(codes.PermissionDenied, "invalid credentials")
 		case errors.Is(err, auth.ErrUserNotFound):
 			return nil, status.Error(codes.InvalidArgument, "user non-exists")
 		default:
@@ -80,11 +76,11 @@ func (s *serverAPI) Logout(ctx context.Context, req *ssov1.LogoutRequest) (*ssov
 	if err := s.auth.Logout(ctx, req.GetRefreshToken()); err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidCredentials) || errors.Is(err, auth.ErrInvalidRefreshToken):
-			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+			return nil, status.Error(codes.PermissionDenied, "Доступ запрещен")
 		case errors.Is(err, auth.ErrSessionNotFound):
-			return nil, status.Error(codes.InvalidArgument, "invalid session_id")
+			return nil, status.Error(codes.InvalidArgument, "Такой сессии не существует")
 		default:
-			return nil, status.Error(codes.Internal, "internal error")
+			return nil, status.Error(codes.Internal, "Внутрення ошибка сервера")
 		}
 	}
 
@@ -119,10 +115,10 @@ func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.
 	accessToken, refreshToken, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidCredentials) {
-			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
+			return nil, status.Error(codes.InvalidArgument, "Неверный логин или пароль")
 		}
 
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, status.Error(codes.Internal, "Внутренняя ошибка сервера")
 	}
 
 	return &ssov1.LoginResponse{
@@ -139,10 +135,10 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*
 	userID, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
 		if errors.Is(err, auth.ErrUserExists) {
-			return nil, status.Error(codes.AlreadyExists, "user already exists")
+			return nil, status.Error(codes.AlreadyExists, "Пользователь с таким email уже существует")
 		}
 
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, status.Error(codes.Internal, "Внутренняя ошибка сервера")
 	}
 
 	return &ssov1.RegisterResponse{

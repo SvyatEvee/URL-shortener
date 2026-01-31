@@ -1,6 +1,7 @@
 package deletee
 
 import (
+	jwtlib "URLshortener/internal/jwt"
 	resp "URLshortener/internal/lib/api/response"
 	"URLshortener/internal/lib/logger/sl"
 	"URLshortener/internal/storage"
@@ -12,19 +13,16 @@ import (
 	"net/http"
 )
 
-// FIXME: не нравится мне что в response тоже есть такая же структура
 type request struct {
-	Alias string `json:"alias" validate:"required"`
+	ID int64 `json:"urlId"`
 }
 
-// хз пока надо или нет
-//type Response struct {
-//	resp.Response
-//	Alias string `json:"alias,omitempty"`
-//}
+type response struct {
+	Error string `json:"message,omitempty"`
+}
 
 type Deleter interface {
-	DeleteAlias(alias string) error
+	DeleteAlias(id int64, userID int64) error
 	//DeleteURL(url string) error
 }
 
@@ -37,12 +35,34 @@ func New(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
+		// Берем из контекста данные JWT токена
+		claims, err := jwtlib.GetClaimsFromContext(r.Context())
+		if err != nil {
+			log.Error("failed to get claims from context")
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, response{Error: "failed to get claims"})
+			return
+		}
+
+		userIDAny, ok := claims["uid"]
+		if !ok {
+			log.Error("failed to get field uid from claims")
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, response{Error: "internal error"})
+			return
+		}
+		userID := int64(userIDAny.(float64))
+
+		//byteData, err := io.ReadAll(r.Body)
+		//strData := string(byteData)
+		//byteData = []byte(strData)
+
 		var req request
 		if err := render.DecodeJSON(r.Body, &req); err != nil {
 			log.Error("failed to decode body", sl.Err(err))
 
 			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.Error("failed to decode request"))
+			render.JSON(w, r, response{Error: "failed to decode request"})
 			return
 		}
 
@@ -54,25 +74,26 @@ func New(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 
 			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.ValidationError(validateErr))
+			render.JSON(w, r, response{Error: resp.ValidationError(validateErr)})
 			return
 		}
 
-		err := deleter.DeleteAlias(req.Alias)
+		err = deleter.DeleteAlias(req.ID, userID)
 		switch {
 		case errors.Is(err, storage.ErrAliasNotFound):
-			log.Error("alias not found", slog.String("alias", req.Alias))
+			log.Error("alias not found", slog.Int64("aliasID", req.ID))
 
 			render.Status(r, http.StatusNotFound)
-			render.JSON(w, r, resp.Error("alias not found"))
+			render.JSON(w, r, response{Error: "alias not found"})
 			return
 		case err != nil:
 			log.Error("failed to delete alias", sl.Err(err))
 
 			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error("internal server error"))
+			render.JSON(w, r, response{Error: "internal server error"})
 			return
 		}
 
-		render.Status(r, http.StatusNoContent)
+		render.NoContent(w, r)
 	}
 }

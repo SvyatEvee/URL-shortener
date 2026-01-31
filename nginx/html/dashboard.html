@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Мои URL - URL Shortener</title>
+     <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Мои сокращённые URL</h1>
+            <button id="logoutBtn">Выйти</button>
+        </header>
+        
+        <div class="add-url-form">
+            <h2>Добавить новый URL</h2>
+            <form id="addUrlForm">
+                <input type="url" id="url" placeholder="https://example.com" required>
+                <input type="text" id="alias" placeholder="Кастомная ссылка (опционально)">
+                <button type="submit">Добавить</button>
+            </form>
+        </div>
+        
+        <div class="urls-list">
+            <h2>Мои ссылки</h2>
+            <div id="urlsContainer"></div>
+        </div>
+    </div>
+    
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

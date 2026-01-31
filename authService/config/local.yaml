@@ -1,9 +1,18 @@
 env: "local"
-mainStorage_path: "./storage/main/mainAuthStorage.db"
-sessionsStorage_path: "./storage/sessions/sessionsAuthStorage.db"
-secret: "mysecret" # так делать, конечно, не бизнес, но пусть пока так
-access_token_ttl: 1h
+mainStorage_db_driver: "postgres"
+sessionsStorage_db_driver: "postgres"
+access_token_ttl: 15m
 refresh_token_ttl: 24h
 grpc:
+  host: 0.0.0.0
   port: 44044
   timeout: 10h
+gateway:
+  gateway_port: 50000
+  enabled: true
+  timeout: 500s
+  idle_timeout: 500s
+urlService:
+  host: url_service
+  port: 8082
+

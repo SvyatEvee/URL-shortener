@@ -16,10 +16,11 @@ import (
 )
 
 type Auth struct {
-	log            *slog.Logger
-	userManager    UserManager
-	tokenManager   TokenManager
-	sessionManager SessionManager
+	log               *slog.Logger
+	userManager       UserManager
+	tokenManager      TokenManager
+	sessionManager    SessionManager
+	urlServiceManager URLServiceManager
 }
 
 type RefreshTokenPayload struct {
@@ -37,6 +38,7 @@ type UserManager interface {
 type TokenManager interface {
 	GenerateNewTokenPair(user *models.User) (string, string, error)
 	GetRefreshTokenTTL() time.Duration
+	CreateServiceToken(ctx context.Context, userID int64) (string, error)
 }
 
 type SessionManager interface {
@@ -47,7 +49,12 @@ type SessionManager interface {
 	DeleteAllUserSessions(ctx context.Context, userID int64) (int64, error)
 }
 
+type URLServiceManager interface {
+	DeleteUser(serviceToken string) error
+}
+
 var (
+	ErrInternalError       = errors.New("internal error")
 	ErrInvalidCredentials  = errors.New("invalid credentials")
 	ErrUserExists          = errors.New("user already exists")
 	ErrSessionNotFound     = errors.New("session not found")
@@ -57,12 +64,13 @@ var (
 )
 
 // New returns a new instance of the Auth service
-func New(log *slog.Logger, userManager UserManager, tokenManager TokenManager, sessionManager SessionManager) *Auth {
+func New(log *slog.Logger, userManager UserManager, tokenManager TokenManager, sessionManager SessionManager, urlServiceManager URLServiceManager) *Auth {
 	return &Auth{
-		userManager:    userManager,
-		log:            log,
-		tokenManager:   tokenManager,
-		sessionManager: sessionManager,
+		userManager:       userManager,
+		log:               log,
+		tokenManager:      tokenManager,
+		sessionManager:    sessionManager,
+		urlServiceManager: urlServiceManager,
 	}
 }
 
@@ -199,11 +207,6 @@ func (a *Auth) Login(ctx context.Context, email string, password string) (string
 		slog.String("op", op),
 		slog.String("email", email))
 
-	start := time.Now()
-	defer func() {
-		log.Debug("request processed", slog.String("duration", time.Since(start).String()))
-	}()
-
 	log.Info("attempting to user login")
 
 	user, err := a.userManager.GetUserByEmail(ctx, email)
@@ -266,7 +269,9 @@ func (a *Auth) Login(ctx context.Context, email string, password string) (string
 
 	refreshToken := base64.URLEncoding.EncodeToString(tokenJSON)
 
-	log.Info("user is logged in", slog.Int64("session_id", sessionID))
+	log.Info("user is logged in",
+		slog.Int64("session_id", sessionID),
+		slog.Int64("user_id", session.UserID))
 	return accessToken, refreshToken, nil
 }
 
@@ -315,18 +320,6 @@ func (a *Auth) Logout(ctx context.Context, refreshToken string) error {
 		slog.String("op", op))
 	log.Debug("logout started")
 
-	claims, err := jwtlib.GetClaimsFromContext(ctx)
-	if err != nil {
-		log.Error("failed to get claims from context", slog.String("error", err.Error()))
-		return err
-	}
-
-	userIDFromJWT, ok := claims["uid"]
-	if !ok {
-		log.Error("failed to get uid from claims")
-		return errors.New("failed to get uid from claims")
-	}
-
 	tokenJSON, err := base64.URLEncoding.DecodeString(refreshToken)
 	if err != nil {
 		log.Error("failed to decode refreshToken to JSON", slog.String("err", err.Error()))
@@ -342,7 +335,6 @@ func (a *Auth) Logout(ctx context.Context, refreshToken string) error {
 	log = log.With(
 		slog.String("op", op),
 		slog.Int64("session_id", payload.SessionID))
-	log.Debug("session id added")
 
 	session, err := a.sessionManager.GetSession(ctx, payload.SessionID)
 	if err != nil {
@@ -354,13 +346,6 @@ func (a *Auth) Logout(ctx context.Context, refreshToken string) error {
 			log.Error("failed to get session", slog.String("error", err.Error()))
 			return err
 		}
-	}
-
-	if session.UserID != int64(userIDFromJWT.(float64)) {
-		log.Info("session.UserID not equal userID from JWT",
-			slog.Int64("session.UserID", session.UserID),
-			slog.Int64("userIDFromJWT", int64(userIDFromJWT.(float64))))
-		return ErrInvalidCredentials
 	}
 
 	err = bcrypt.CompareHashAndPassword(session.RefreshTokenRandomPartHash, []byte(payload.RandomPart))
@@ -417,6 +402,12 @@ func (a *Auth) DeleteUserByID(ctx context.Context, userID int64) error {
 	if role != "admin" && userID != int64(floatUserID.(float64)) {
 		log.Info("invalid credentials")
 		return ErrInvalidCredentials
+	}
+
+	err = a.DeleteFromURLService(ctx, userID)
+	if err != nil {
+		log.Error("failed to delete user's data from url service")
+		return err
 	}
 
 	log = a.log.With(
@@ -504,6 +495,12 @@ func (a *Auth) DeleteUserByEmail(ctx context.Context, userEmail string) error {
 		return ErrInvalidCredentials
 	}
 
+	err = a.DeleteFromURLService(ctx, user.ID)
+	if err != nil {
+		log.Error("failed to delete user's data from url service")
+		return err
+	}
+
 	log = a.log.With(
 		slog.String("op", op),
 		slog.Int64("user_id", user.ID))
@@ -528,5 +525,31 @@ func (a *Auth) DeleteUserByEmail(ctx context.Context, userEmail string) error {
 
 	log.Info("user has been successfully deleted",
 		slog.Int64("deleted sessions", deleteNumber))
+	return nil
+}
+
+func (a *Auth) DeleteFromURLService(ctx context.Context, userID int64) error {
+	const op = "auth.DeleteFromURLService"
+
+	log := a.log.With(
+		slog.String("op", op))
+
+	start := time.Now()
+	defer func() {
+		log.Debug("request processed", slog.String("duration", time.Since(start).String()))
+	}()
+
+	serviceToken, err := a.tokenManager.CreateServiceToken(ctx, userID)
+	if err != nil {
+		log.Error("failed to create service token", slog.String("error", err.Error()))
+		return ErrInternalError
+	}
+
+	err = a.urlServiceManager.DeleteUser(serviceToken)
+	if err != nil {
+		log.Error("failed to delete user data from url service", slog.String("error", err.Error()))
+		return err
+	}
+
 	return nil
 }

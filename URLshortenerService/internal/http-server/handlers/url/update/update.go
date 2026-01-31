@@ -1,10 +1,9 @@
 package update
 
 import (
-	"URLshortener/internal/http-server/handlers/url/save"
+	jwtlib "URLshortener/internal/jwt"
 	resp "URLshortener/internal/lib/api/response"
 	"URLshortener/internal/lib/logger/sl"
-	"URLshortener/internal/lib/random"
 	"URLshortener/internal/storage"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,21 +14,23 @@ import (
 )
 
 type request struct {
-	URL   string `json:"url" validate:"required,url"`
-	Alias string `json:"alias,omitempty"`
+	ID     int64  `json:"urlId"`
+	NewUrl string `json:"newUrl" validate:"required,url"`
 }
 
 type Response struct {
-	resp.Response
-	Alias string `json:"alias,omitempty"`
+	ID    int64  `json:"id,omitempty"`
+	Url   string `json:"url,omitempty"`
+	Error string `json:"message,omitempty"`
 }
 
 //go:generate mockery --name=URLUpdater --output=./mocks
-type URLUpdater interface {
-	UpdateURL(string, string) error
+type Updater interface {
+	//UpdateAlias(oldAlias string, newAlias string, userID int64) error
+	UpdateAlias(id int64, newUrl string, userID int64) error
 }
 
-func New(log *slog.Logger, URLUpdater URLUpdater) http.HandlerFunc {
+func New(log *slog.Logger, Updater Updater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.update.New"
 
@@ -40,16 +41,34 @@ func New(log *slog.Logger, URLUpdater URLUpdater) http.HandlerFunc {
 
 		if r.Header.Get("Content-Type") != "application/json" {
 			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.Error("invalid Content-Type"))
+			render.JSON(w, r, Response{Error: "invalid Content-Type"})
 			return
 		}
+
+		// Берем из контекста данные JWT токена
+		claims, err := jwtlib.GetClaimsFromContext(r.Context())
+		if err != nil {
+			log.Error("failed to get claims from context")
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, Response{Error: "failed to get claims"})
+			return
+		}
+
+		userIDAny, ok := claims["uid"]
+		if !ok {
+			log.Error("failed to get field uid from claims")
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, Response{Error: "internal error"})
+			return
+		}
+		userID := int64(userIDAny.(float64))
 
 		var req request
 		if err := render.DecodeJSON(r.Body, &req); err != nil {
 			log.Error("failed to decode request body", sl.Err(err))
 
 			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.Error("failed to decode request"))
+			render.JSON(w, r, Response{Error: "failed to decode request"})
 			return
 		}
 		log.Info("request body decoded", slog.Any("request", req))
@@ -59,43 +78,32 @@ func New(log *slog.Logger, URLUpdater URLUpdater) http.HandlerFunc {
 
 			log.Error("invalid request", sl.Err(err))
 			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.ValidationError(validateErr))
+			render.JSON(w, r, Response{Error: resp.ValidationError(validateErr)})
 			return
-		}
-
-		alias := req.Alias
-		if alias == "" {
-			alias = random.NewRandomString(save.AliasLength)
 		}
 
 		// Обновление данных в storage
-		err := URLUpdater.UpdateURL(req.URL, alias)
+		err = Updater.UpdateAlias(req.ID, req.NewUrl, userID)
 		switch {
-		case errors.Is(err, storage.ErrAliasExist):
-			log.Info("alias already exists", slog.String("url", req.URL))
+		case errors.Is(err, storage.ErrAliasNotFound):
+			log.Info("alias not found", slog.Int64("url", req.ID))
 
 			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.Error("alias already exists"))
-			return
-		case errors.Is(err, storage.ErrURLNotFound):
-			log.Info("url not found", slog.String("url", req.URL))
-
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.Error("url not found"))
+			render.JSON(w, r, Response{Error: "alias not found"})
 			return
 		case err != nil:
-			log.Error("failed to update url", sl.Err(err))
+			log.Error("failed to update alias", sl.Err(err))
 
 			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error("failed to update url"))
+			render.JSON(w, r, Response{Error: "failed to update alias"})
 			return
 		}
 
 		log.Info("url updated")
 
 		render.JSON(w, r, Response{
-			Response: resp.OK(),
-			Alias:    alias,
+			ID:  req.ID,
+			Url: req.NewUrl,
 		})
 	}
 }
