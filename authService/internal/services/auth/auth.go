@@ -288,7 +288,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password strin
 	}()
 
 	log.Info("registering user")
-
+	
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Error("failed to generate password hash", sl.Err(err))

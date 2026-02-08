@@ -1,0 +1,52 @@
+name: Deploy App
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy'
+        required: true
+
+jobs:
+  checkout_docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout docker
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
+          
+        run: |
+          if [[ -z "$SSH_PRIVATE_KEY" || -z "$REMOTE_HOST" || -z "$REMOTE_USER" ]]; then
+            echo "::error::One or more required secrets are missing"
+            exit 1
+          fi
+
+          echo $SSH_PRIVATE_KEY > private_key
+          chmod 600 private_key
+
+          PORT=${REMOTE_PORT:-22}
+          SCRIPT_PATH="/home/${REMOTE_USER}/scripts/docker_install_script.sh"
+
+          ssh -p $PORT \
+              -i private_key \
+              -o StrictHostKeyChecking=no \
+              "$REMOTE_USER@$REMOTE_HOST" \
+              "if [[ -f '$SCRIPT_PATH' && -x '$SCRIPT_PATH' ]]; then \
+                 echo 'Script exists and is executable'; \
+               else \
+                 echo 'Script not found or not executable at: $SCRIPT_PATH'; \
+                 exit 1; \
+               fi"
+
+          ssh -p $PORT \
+              -o StrictHostKeyChecking=no \
+              -i private_key \
+              "$REMOTE_USER@$REMOTE_HOST" \
+              "sudo $SCRIPT_PATH"
+
+          rm -f private_key
+
