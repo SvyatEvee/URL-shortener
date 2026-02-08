@@ -25,7 +25,7 @@ jobs:
             exit 1
           fi
 
-          echo $SSH_PRIVATE_KEY > private_key
+          echo "$SSH_PRIVATE_KEY" > private_key
           chmod 600 private_key
 
           PORT=${REMOTE_PORT:-22}
