@@ -99,6 +99,7 @@ function displayUrls(urls) {
                 <a href="${url.url}" target="_blank">${url.url}</a><br>
                 <strong>Сокращённый:</strong> 
                 <a href="${url.url}" target="_blank">${url.alias}</a><br>
+                <small>Воспользуйтесь этой ссылкой, введя в адресную строку <strong>svsevs.ru/${url.alias}</strong></small><br>
             </div>
             <div class="url-actions">
                 <button onclick="editUrl(${url.id})">Изменить</button>
