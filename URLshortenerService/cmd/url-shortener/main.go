@@ -64,7 +64,7 @@ func main() {
 		r.Get("/urls", getUsersAliases.New(log, storage))
 	})
 
-	log.Info("starting server", slog.String("address", cfg.Address))
+	log.Info("starting server :", slog.String("address", cfg.Address))
 
 	srv := &http.Server{
 		Addr:         cfg.Address,

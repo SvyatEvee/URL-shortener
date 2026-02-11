@@ -7,6 +7,14 @@ on:
         description: 'Tag to deploy'
         required: true
 
+env:
+  REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+  REMOTE_USER: ${{ secrets.REMOTE_USER }}
+  REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
+  APP_PATH:    ${{ secrets.APP_PATH }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+
 jobs:
   checkout_docker:
     runs-on: ubuntu-latest
@@ -15,9 +23,6 @@ jobs:
       - name: Checkout docker
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
           
         run: |
           if [[ -z "$SSH_PRIVATE_KEY" || -z "$REMOTE_HOST" || -z "$REMOTE_USER" ]]; then
@@ -50,3 +55,92 @@ jobs:
 
           rm -f private_key
 
+  
+  deploy:
+    runs-on: ubuntu-latest
+    needs: checkout_docker
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+      
+      - name: Copy to VM
+        run: |
+          sudo apt-get install -y ssh rsync
+          echo "$SSH_PRIVATE_KEY" > deploy_key
+          chmod 600 deploy_key
+          
+          PORT=${REMOTE_PORT:-22}
+
+          ssh -p $PORT \
+              -i deploy_key \
+              -o StrictHostKeyChecking=no \
+              "$REMOTE_USER@$REMOTE_HOST" \
+              "mkdir -p $APP_PATH"
+
+          rsync -avzc \
+                -e "ssh -i deploy_key -o StrictHostKeyChecking=no -p $PORT" \
+                --delete \
+                --exclude '.git' \
+                --exclude '.gitignore' \
+                --exclude 'README.md' \
+                --exclude 'deploy_key' \
+                ./ "$REMOTE_USER@$REMOTE_HOST:$APP_PATH"
+      
+      - name: Create .env file on server
+        run: |
+          cat > .env << 'EOF'
+          DB_USERS_NAME=${{ secrets.DB_USERS_NAME }}
+          DB_USERS_USERNAME=${{ secrets.DB_USERS_USERNAME }}
+          DB_USERS_PASSWORD=${{ secrets.DB_USERS_PASSWORD }}
+          DB_USERS_HOST=${{ secrets.DB_USERS_HOST }}
+          DB_USERS_PORT=${{ secrets.DB_USERS_PORT }}
+
+          DB_SESSIONS_NAME=${{ secrets.DB_SESSIONS_NAME }}
+          DB_SESSIONS_USERNAME=${{ secrets.DB_SESSIONS_USERNAME }}
+          DB_SESSIONS_PASSWORD=${{ secrets.DB_SESSIONS_PASSWORD }}
+          DB_SESSIONS_HOST=${{ secrets.DB_SESSIONS_HOST }}
+          DB_SESSIONS_PORT=${{ secrets.DB_SESSIONS_PORT }}
+
+          DB_URLS_NAME=${{ secrets.DB_URLS_NAME }}
+          DB_URLS_USERNAME=${{ secrets.DB_URLS_USERNAME }}
+          DB_URLS_PASSWORD=${{ secrets.DB_URLS_PASSWORD }}
+          DB_URLS_HOST=${{ secrets.DB_URLS_HOST }}
+          DB_URLS_PORT=${{ secrets.DB_URLS_PORT }}
+
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          EOF
+
+          PORT=${REMOTE_PORT:-22}
+
+          rsync -avzc \
+                -e "ssh -i deploy_key -o StrictHostKeyChecking=no -p $PORT" \
+                ./.env "$REMOTE_USER@$REMOTE_HOST:$APP_PATH/"
+
+          rm -f deploy_key
+
+      - name: docker compose up
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          port: ${{ secrets.REMOTE_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
+          script: |
+            echo 'Starting docker deploy'
+
+            cd /home/deploy-user/app
+            
+            if docker compose ps --services 2>/dev/null | grep -q .; then
+              echo "Down current container"
+              docker compose down
+            fi
+
+            docker compose build
+            docker compose up -d
+            docker compose ps
+            docker compose logs --tail=10
+            docker system prune -f
+            

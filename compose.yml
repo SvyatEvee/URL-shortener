@@ -2,10 +2,12 @@ services:
 
   nginx:
     build: ./nginx
-    image: nginx_app:1.0
-    container_name: nginx_server
+    image: nginx_app
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - "/etc/letsencrypt:/etc/letsencrypt:ro"
     expose: 
       - 80
     networks:
@@ -17,7 +19,7 @@ services:
 
   auth_service:
     build: ./authService
-    image: auth_service:1.0
+    image: auth_service
     env_file:
       - .env
     networks:
@@ -28,7 +30,7 @@ services:
 
   url_service:
     build: ./URLshortenerService
-    image: url_service:1.0
+    image: url_service
     env_file:
       - .env
     networks:
