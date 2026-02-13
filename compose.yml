@@ -48,7 +48,7 @@ services:
       - POSTGRES_USER=${DB_USERS_USERNAME}
       - POSTGRES_DB=${DB_USERS_NAME}
     ports:
-     - "5432:5432"
+     - "127.0.0.1:${DB_USERS_PORT}:5432"
     networks:
       - shortnet
     healthcheck:
@@ -67,7 +67,7 @@ services:
       - POSTGRES_USER=${DB_SESSIONS_USERNAME}
       - POSTGRES_DB=${DB_SESSIONS_NAME}
     ports:
-     - "5431:5432"
+     - "127.0.0.1:${DB_SESSIONS_PORT}:5432"
     networks:
       - shortnet
     healthcheck:
@@ -86,7 +86,7 @@ services:
       - POSTGRES_USER=${DB_URLS_USERNAME}
       - POSTGRES_DB=${DB_URLS_NAME}
     ports:
-     - "5433:5432"
+     - "127.0.0.1:${DB_URLS_PORT}:5432"
     networks:
       - shortnet
     healthcheck:

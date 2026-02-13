@@ -1,14 +1,10 @@
 version: "3"
 
 vars:
-  MAIN_DB_URL:    "postgres://{{.DB_USERS_USERNAME}}:{{.DB_USERS_PASSWORD}}@{{.DB_USERS_HOST}}:{{.DB_USERS_PORT}}/{{.DB_USERS_NAME}}?sslmode=disable"
-  SESSION_DB_URL: "postgres://{{.DB_SESSIONS_USERNAME}}:{{.DB_SESSIONS_PASSWORD}}@{{.DB_SESSIONS_HOST}}:{{.DB_SESSIONS_PORT}}/{{.DB_SESSIONS_NAME}}?sslmode=disable"
+  MAIN_DB_URL:    "postgres://{{.DB_USERS_USERNAME}}:{{.DB_USERS_PASSWORD}}@{{.DB_USERS_HOST}}:5432/{{.DB_USERS_NAME}}?sslmode=disable"
+  SESSION_DB_URL: "postgres://{{.DB_SESSIONS_USERNAME}}:{{.DB_SESSIONS_PASSWORD}}@{{.DB_SESSIONS_HOST}}:5432/{{.DB_SESSIONS_NAME}}?sslmode=disable"
   MAIN_MIGRATIONS_PATH:     "./migrations/main/postgres"
   SESSIONS_MIGRATIONS_PATH: "./migrations/sessions/postgres"
-#  MAIN_DB_URL:    "sqlite3://./storage/main/mainstorage.db"
-#  SESSION_DB_URL: "sqlite3://./storage/sessions/sessionstorage.db"
-#  MAIN_MIGRATIONS_PATH:     "./migrations/main/sqlite"
-#  SESSIONS_MIGRATIONS_PATH: "./migrations/sessions/sqlite"
 
 tasks:
   migrate-sql:

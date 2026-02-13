@@ -1,8 +1,0 @@
-env: "local" #local, dev, prod
-db_driver : "postgres"
-http_server:
-  address: ":8082"
-  timeout: 1000s
-  idle_timeout: 10000s
-  user: "myuser"
-  password: "mypass"
