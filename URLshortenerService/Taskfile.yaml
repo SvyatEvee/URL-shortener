@@ -1,7 +1,7 @@
 version: "3"
 
 vars:
-  DB_URL: "postgres://{{.DB_URLS_USERNAME}}:{{.DB_URLS_PASSWORD}}@{{.DB_URLS_HOST}}:{{.DB_URLS_PORT}}/{{.DB_URLS_NAME}}?sslmode=disable"
+  DB_URL: "postgres://{{.DB_URLS_USERNAME}}:{{.DB_URLS_PASSWORD}}@{{.DB_URLS_HOST}}:5432/{{.DB_URLS_NAME}}?sslmode=disable"
   MIGRATIONS_PATH: "./migrations/postgres"
 
 tasks:

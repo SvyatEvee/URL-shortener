@@ -1,0 +1,6 @@
+env: "prod" #local, dev, prod
+db_driver : "postgres"
+http_server:
+  address: ":8082"
+  timeout: 10s
+  idle_timeout: 120s

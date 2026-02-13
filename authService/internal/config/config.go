@@ -110,7 +110,7 @@ func MustLoadByPath(configPath string) *Config {
 		main_db.DB_USERNAME,
 		main_db.DB_PASSWORD,
 		main_db.DB_HOST,
-		main_db.DB_PORT,
+		"5432",
 		main_db.DB_NAME,
 	)
 
@@ -118,7 +118,7 @@ func MustLoadByPath(configPath string) *Config {
 		sessions_db.DB_USERNAME,
 		sessions_db.DB_PASSWORD,
 		sessions_db.DB_HOST,
-		sessions_db.DB_PORT,
+		"5432",
 		sessions_db.DB_NAME,
 	)
 

@@ -36,11 +36,7 @@ COPY Taskfile.yaml ./
 COPY migrations/ ./migrations/
 COPY config/ ./config/
 
-ENV MAIN_DB_URL="postgres://user:pass@localhost:5432/main?sslmode=disable"
-ENV SESSION_DB_URL="postgres://user:pass@localhost:5431/sessions?sslmode=disable"
-ENV MAIN_MIGRATIONS_PATH="./migrations/main/postgres"
-ENV SESSIONS_MIGRATIONS_PATH="./migrations/sessions/postgres"
-ENV CONFIG_PATH="./config/local.yaml"
+ENV CONFIG_PATH="./config/prod.yaml"
 
 EXPOSE 8082
 

@@ -36,7 +36,7 @@ COPY Taskfile.yaml ./
 COPY migrations/ ./migrations/
 COPY config/ ./config/
 
-ENV CONFIG_PATH="./config/local.yaml"
+ENV CONFIG_PATH="./config/prod.yaml"
 
 EXPOSE 50000
 

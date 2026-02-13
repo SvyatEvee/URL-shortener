@@ -81,7 +81,7 @@ func MustLoad() *Config {
 		urls_db.DB_USERNAME,
 		urls_db.DB_PASSWORD,
 		urls_db.DB_HOST,
-		urls_db.DB_PORT,
+		"5432",
 		urls_db.DB_NAME,
 	)
 
