@@ -2,24 +2,95 @@
 <html>
 <head>
     <title>Вход - URL Shortener</title>
-     <meta charset="UTF-8">
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Вход</h1>
-        <form id="loginForm">
-            <input type="text" id="email" placeholder="Логин" required>
-            <input type="password" id="password" placeholder="Пароль" required>
-            <button type="submit">Войти</button>
-        </form>
-        <p>Нет аккаунта? <a href="register.html">Зарегистрируйтесь</a></p>
+        <nav class="navbar">
+            <div class="logo">URL Shortener</div>
+            <div class="nav-links">
+                <a href="#about">О проекте</a>
+                <a href="#stack">Стек</a>
+                <a href="#contacts">Контакты</a>
+                <div class="nav-buttons">
+                    <a href="login.html" class="nav-btn">Войти</a>
+                    <a href="register.html" class="nav-btn">Регистрация</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="login-section">
+            <h1>Вход</h1>
+            <form id="loginForm">
+                <input type="text" id="email" placeholder="Логин" required>
+                <input type="password" id="password" placeholder="Пароль" required>
+                <button type="submit">Войти</button>
+            </form>
+            <p style="text-align: center; margin-top: 20px;">
+                Нет аккаунта? <a href="register.html">Зарегистрируйтесь</a>
+            </p>
+        </div>
+
+        <div id="about">
+            <h2>О проекте</h2>
+            <p>Как часто у вас возникает потребность сохранить сайт для быстрого доступа, 
+                но при этом совсем не хочется засорять закладки или главную страницу браузера? 
+                Этот сервис позволяет создавать короткие ссылки и пользоваться ими с любого устройства, где вы авторизованы.</p>
+        </div>
+
+        <div id="stack">
+            <h2>Стек технологий</h2>
+            <div class="tech-stack">
+                <span class="tech-chip"><i class="fab fa-golang"></i>Go</span>
+                <span class="tech-chip"><i class="fas fa-database"></i>Postgres</span>
+                <span class="tech-chip"><i class="fas fa-code-branch"></i>REST API</span>
+                <span class="tech-chip"><i class="fas fa-network-wired"></i>gRPC</span>
+                <span class="tech-chip"><i class="fas fa-lock"></i>JWT</span>
+                <span class="tech-chip"><i class="fas fa-server"></i>nginx</span>
+                <span class="tech-chip"><i class="fab fa-docker"></i>Docker</span>
+                <span class="tech-chip"><i class="fab fa-docker"></i>Docker Compose</span>
+                <span class="tech-chip"><i class="fab fa-github"></i>GitHub Actions</span>
+                <span class="tech-chip"><i class="fab fa-github"></i>JS</span>
+                <span class="tech-chip"><i class="fab fa-github"></i>SSL/TLS</span>
+            </div>
+            
+            <div class="repo-card">
+                <i class="fab fa-github"></i>
+                <div class="repo-content">
+                    <h3>Ознакомьтесь с исходным кодом проекта</h3>
+                    <a href="https://github.com/SvyatEvee/URL-shortener">github.com/SvyatEvee/URL-shortener</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="contacts">
+            <h2>Контакты</h2>
+            <div class="contacts-section">
+                <div class="contact-card">
+                    <i class="fas fa-user"></i>
+                    <h3>Разработчик</h3>
+                    <p>Святослав Евсеев</p>
+                </div>
+                <div class="contact-card">
+                    <i class="fas fa-envelope"></i>
+                    <h3>Email</h3>
+                    <a href="mailto:svyatoslavevseev1@yandex.ru">svyatoslavevseev1@yandex.ru</a>
+                </div>
+                <div class="contact-card">
+                    <i class="fab fa-telegram"></i>
+                    <h3>Telegram</h3>
+                    <a href="https://t.me/svyatoslaveevs">@svyatoslaveevs</a>
+                </div>
+                <div class="contact-card">
+                    <i class="fas fa-phone"></i>
+                    <h3>Телефон</h3>
+                    <a href="tel:+79523433819">8 (952) 343-38-19</a>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="container">
-        <h2>Контакты</h2>
-        <p>Email: example@mail.com</p>
-        <p>Телефон: +7 (123) 456-78-90</p>
-    </div>
+
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
 </body>

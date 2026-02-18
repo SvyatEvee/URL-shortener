@@ -2,21 +2,25 @@
 <html>
 <head>
     <title>Мои URL - URL Shortener</title>
-     <meta charset="UTF-8">
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Мои сокращённые URL</h1>
-            <button id="logoutBtn">Выйти</button>
-        </header>
-        
+        <nav class="navbar">
+            <div class="logo">URL Shortener</div>
+            <div class="nav-links">
+                <div class="nav-buttons">
+                    <button id="logoutBtn" class="nav-btn" style="background: #ff4757; color: white;">Выйти</button>
+                </div>
+            </div>
+        </nav>
+                
         <div class="add-url-form">
             <h2>Добавить новый URL</h2>
             <form id="addUrlForm">
                 <input type="url" id="url" placeholder="https://example.com" required>
-                <input type="text" id="alias" placeholder="Кастомная ссылка (опционально)">
+                <input type="text" id="alias" placeholder="Кастомная ссылка">
                 <button type="submit">Добавить</button>
             </form>
         </div>

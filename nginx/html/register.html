@@ -1,19 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Регистрация</title>
+    <title>Регистрация - URL Shortener</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Регистрация</h1>
-        <form id="registerForm">
-            <input type="text" id="email" placeholder="Email" required>
-            <input type="password" id="password" placeholder="Пароль" required>
-            <button type="submit">Зарегистрироваться</button>
-        </form>
-        <p>Уже есть аккаунт? <a href="login.html">Войдите</a></p>
+        <nav class="navbar">
+            <div class="logo">URL Shortener</div>
+            <div class="nav-links">
+                <a href="index.html#about">О проекте</a>
+                <a href="index.html#stack">Стек</a>
+                <a href="index.html#contacts">Контакты</a>
+                <div class="nav-buttons">
+                    <a href="login.html" class="nav-btn">Войти</a>
+                    <a href="register.html" class="nav-btn">Регистрация</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="register-section">
+            <h1>Регистрация</h1>
+            <form id="registerForm">
+                <input type="text" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Пароль" required>
+                <button type="submit">Зарегистрироваться</button>
+            </form>
+            <p style="text-align: center; margin-top: 20px;">
+                Уже есть аккаунт? <a href="login.html">Войдите</a>
+            </p>
+        </div>
     </div>
 
     <script src="js/api.js"></script>
