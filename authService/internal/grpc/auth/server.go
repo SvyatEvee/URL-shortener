@@ -149,7 +149,7 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*
 func validateLogin(req *ssov1.LoginRequest) error {
 
 	type loginRequestValidate struct {
-		Email    string `validate:"required,email"`
+		Email    string `validate:"required"`
 		Password string `validate:"required"`
 	}
 
@@ -171,7 +171,7 @@ func validateLogin(req *ssov1.LoginRequest) error {
 
 func validateRegister(req *ssov1.RegisterRequest) error {
 	type registerRequestValidate struct {
-		Email    string `validate:"required,email"`
+		Email    string `validate:"required"`
 		Password string `validate:"required"`
 	}
 
@@ -195,7 +195,7 @@ func validateEmail(req *ssov1.DeleteUserByEmailRequest) error {
 	validate := validator.New()
 
 	email := req.GetEmail()
-	if err := validate.Var(email, "required,email"); err != nil {
+	if err := validate.Var(email, "required"); err != nil {
 		var validateErr validator.ValidationErrors
 		if errors.As(err, &validateErr) {
 			return status.Error(codes.InvalidArgument, api.ValidationError(validateErr))
